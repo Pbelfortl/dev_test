@@ -35,10 +35,42 @@ initializeDatabase();
 
 app.post('/users', async (req, res) => {
 // Crie o endpoint de users
+  const user:User = req.body
+  const inUse = await AppDataSource.getRepository(User).find({where: {email: user.email}})
+
+  if (inUse) {
+    res.status(409).send("Email já em uso!")
+    return
+  }
+
+    res.status(201).send(user)
+    return
+
+  try {
+    await AppDataSource.getRepository(User).create({firstName: user.firstName, lastName: user.lastName, email: user.email})
+    res.sendStatus(201)
+  } catch (error) {
+    res.sendStatus(500)
+  }
+
 });
 
 app.post('/posts', async (req, res) => {
 // Crie o endpoint de posts
+const post:Post = req.body
+const user = await AppDataSource.getRepository(User).find({where: {id: post.userId}})
+
+if (!user) {
+  res.status(404).send("Usuário não cadastrado!")
+  return
+}
+
+try {
+  await AppDataSource.getRepository(Post).create({title: post.title, description: post.description, userId: post.userId})
+  res.sendStatus(201)
+} catch (error) {
+  res.sendStatus(500)
+}
 });
 
 const PORT = process.env.PORT || 3000;
